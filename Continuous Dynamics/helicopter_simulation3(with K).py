@@ -12,8 +12,8 @@ output_limit = 1.0  # 출력 신호의 최대 절대값
 # 시간 벡터 생성
 t = np.arange(0, T_total, dt)
 
-# 초기 상태 및 원하는 각속도 설정 (0.5 rad/s)
-desired_theta_y = np.full_like(t, 0.5)
+# 초기 상태 및 원하는 각속도 설정 (0.2 rad/s)
+desired_theta_y = np.full_like(t, 0.2)
 
 # 외부 입력 토크 (메인 로터의 토크)
 T_t = b * np.heaviside(t, 1)  # 단위 계단 함수
@@ -47,11 +47,11 @@ def simulate_feedback_control(K):
     return theta_y
 
 
-# 두 가지 K 값에 대한 시뮬레이션 실행
-K_values = [2.0, 5.0]
+# 세 가지 K 값에 대한 시뮬레이션 실행
+K_values = [2.0, 5.0, 10.0]
 results = {}
 
-plt.figure(figsize=(10, 6))
+plt.figure(figsize=(15, 6))
 
 for K in K_values:
     theta_y = simulate_feedback_control(K)
