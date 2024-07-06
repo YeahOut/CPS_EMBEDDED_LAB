@@ -4,70 +4,88 @@
 
 using namespace std;
 
-// Çï¸®ÄßÅÍ ¸ğµ¨ ¸Å°³º¯¼ö
-const double I_yy = 1.0;  // °ü¼º ¸ğ¸àÆ®
-const double a = 1.0;     // ½ºÄÉÀÏ¸µ »ó¼ö
-const double b = 1.0;     // »ó¼ö b
-const double T_total = 10.0;  // ½Ã¹Ä·¹ÀÌ¼Ç ½Ã°£ (ÃÊ)
-const double dt = 0.01;  // ½Ã°£ °£°İ
-const double output_limit = 1.0;  // Ãâ·Â ½ÅÈ£ÀÇ ÃÖ´ë Àı´ë°ª
+class HelicopterControl {
+public:
+    // í—¬ë¦¬ì½¥í„° ëª¨ë¸ ë§¤ê°œë³€ìˆ˜
+    double I_yy;
+    double a;
+    double b;
+    double T_total;
+    double dt;
+    double output_limit;
 
-// ½Ã¹Ä·¹ÀÌ¼Ç ÇÔ¼ö Á¤ÀÇ
-vector<double> simulate_feedback_control(double K, const vector<double>& desired_theta_y, const vector<double>& T_t) {
-    size_t steps = desired_theta_y.size();
-    vector<double> theta_y(steps, 0.0);
-    vector<double> error(steps, 0.0);
+    HelicopterControl(double I_yy, double a, double b, double T_total, double dt, double output_limit)
+        : I_yy(I_yy), a(a), b(b), T_total(T_total), dt(dt), output_limit(output_limit) {}
 
-    for (size_t i = 1; i < steps; ++i) {
-        // ÇöÀç ¿À·ù °è»ê
-        error[i] = desired_theta_y[i] - theta_y[i - 1];
+    // ì‹œë®¬ë ˆì´ì…˜ í•¨ìˆ˜ ì •ì˜
+    vector<double> simulate_feedback_control(double K, const vector<double>& desired_theta_y, const vector<double>& T_t) {
+        size_t steps = desired_theta_y.size();
+        vector<double> theta_y(steps, 0.0);
+        vector<double> error(steps, 0.0);
 
-        // Á¦¾î ½ÅÈ£ »ı¼º
-        double T_r = K * error[i];
+        for (size_t i = 1; i < steps; ++i) {
+            // í˜„ì¬ ì˜¤ë¥˜ ê³„ì‚°
+            error[i] = desired_theta_y[i] - theta_y[i - 1];
 
-        // ÀüÃ¼ ÅäÅ© °è»ê
-        double T_y = T_t[i] + T_r;
+            // ì œì–´ ì‹ í˜¸ ìƒì„±
+            double T_r = K * error[i];
 
-        // °¢¼Óµµ ¾÷µ¥ÀÌÆ® (ÀûºĞ °è»ê)
-        theta_y[i] = theta_y[i - 1] + (a * T_y / I_yy) * dt;
+            // ì „ì²´ í† í¬ ê³„ì‚°
+            double T_y = T_t[i] + T_r;
 
-        // Ãâ·Â ½ÅÈ£ °æ°è ¼³Á¤
-        if (theta_y[i] > output_limit) {
-            theta_y[i] = output_limit;
+            // ê°ì†ë„ ì—…ë°ì´íŠ¸ (ì ë¶„ ê³„ì‚°)
+            theta_y[i] = theta_y[i - 1] + (a * T_y / I_yy) * dt;
+
+            // ì¶œë ¥ ì‹ í˜¸ ê²½ê³„ ì„¤ì •
+            if (theta_y[i] > output_limit) {
+                theta_y[i] = output_limit;
+            }
+            else if (theta_y[i] < -output_limit) {
+                theta_y[i] = -output_limit;
+            }
         }
-        else if (theta_y[i] < -output_limit) {
-            theta_y[i] = -output_limit;
-        }
+
+        return theta_y;
     }
 
-    return theta_y;
-}
+    // ì‹œë®¬ë ˆì´ì…˜ ì‹¤í–‰ í•¨ìˆ˜
+    void run_simulation(const vector<double>& K_values, double desired_theta_value) {
+        size_t steps = static_cast<size_t>(T_total / dt);
+        vector<double> t(steps);
+        for (size_t i = 0; i < steps; ++i) {
+            t[i] = i * dt;
+        }
+
+        // ì´ˆê¸° ìƒíƒœ ë° ì›í•˜ëŠ” ê°ì†ë„ ì„¤ì •
+        vector<double> desired_theta_y(steps, desired_theta_value);
+
+        // ì™¸ë¶€ ì…ë ¥ í† í¬ (ë©”ì¸ ë¡œí„°ì˜ í† í¬) ì œê±°
+        vector<double> T_t(steps, 0.0);  // ì™¸ë¶€ ì…ë ¥ í† í¬ ì—†ìŒ
+
+        // ê° K ê°’ì— ëŒ€í•œ ì‹œë®¬ë ˆì´ì…˜ ì‹¤í–‰
+        for (double K : K_values) {
+            vector<double> theta_y = simulate_feedback_control(K, desired_theta_y, T_t);
+            cout << "K = " << K << endl;
+            for (size_t i = 0; i < steps; ++i) {
+                cout << "Time = " << t[i] << " s, Angular Velocity = " << theta_y[i] << " rad/s" << endl;
+            }
+            cout << endl;
+        }
+    }
+};
 
 int main() {
-    // ½Ã°£ º¤ÅÍ »ı¼º
-    size_t steps = static_cast<size_t>(T_total / dt);
-    vector<double> t(steps);
-    for (size_t i = 0; i < steps; ++i) {
-        t[i] = i * dt;
-    }
+    // í—¬ë¦¬ì½¥í„° ì œì–´ ì‹œìŠ¤í…œ ìƒì„±
+    HelicopterControl helicopter(1.0, 1.0, 1.0, 10.0, 0.01, 1.0);
 
-    // ÃÊ±â »óÅÂ ¹× ¿øÇÏ´Â °¢¼Óµµ ¼³Á¤ (0.2 rad/s)
-    vector<double> desired_theta_y(steps, 0.2);
+    // ì œì–´ ìƒìˆ˜ ê°’ë“¤
+    vector<double> K_values = {2.0, 5.0, 10.0};
 
-    // ¿ÜºÎ ÀÔ·Â ÅäÅ© (¸ŞÀÎ ·ÎÅÍÀÇ ÅäÅ©) Á¦°Å
-    vector<double> T_t(steps, 0.0);  // ¿ÜºÎ ÀÔ·Â ÅäÅ© ¾øÀ½
+    // ì›í•˜ëŠ” ê°ì†ë„
+    double desired_theta_value = 0.2;
 
-    // ¼¼ °¡Áö K °ª¿¡ ´ëÇÑ ½Ã¹Ä·¹ÀÌ¼Ç ½ÇÇà
-    vector<double> K_values = { 2.0, 5.0, 10.0 };
-
-    for (double K : K_values) {
-        vector<double> theta_y = simulate_feedback_control(K, desired_theta_y, T_t);
-        cout << "K = " << K << endl;
-        for (size_t i = 0; i < steps; ++i) {
-            cout << "Time = " << t[i] << " s, Angular Velocity = " << theta_y[i] << " rad/s" << endl;
-        }
-        cout << endl;
-    }
+    // ì‹œë®¬ë ˆì´ì…˜ ì‹¤í–‰
+    helicopter.run_simulation(K_values, desired_theta_value);
 
     return 0;
 }
