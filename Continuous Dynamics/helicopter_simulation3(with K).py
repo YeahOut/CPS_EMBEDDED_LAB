@@ -48,7 +48,7 @@ def simulate_feedback_control(K):
 
 
 # 세 가지 K 값에 대한 시뮬레이션 실행
-K_values = [2.0, 5.0, 10.0]
+K_values = [10, 100, 180]
 results = {}
 
 plt.figure(figsize=(15, 6))
