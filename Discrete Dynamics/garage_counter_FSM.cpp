@@ -26,7 +26,8 @@ public:
     void update_state() {
         if (up_present && !down_present) {
             state++;
-        } else if (!up_present && down_present) {
+        }
+        else if (!up_present && down_present) {
             state--;
         }
         // 처리 후 신호를 리셋
@@ -53,11 +54,16 @@ int main() {
         {false, true}   // 차량 출발
     };
 
-    for (const auto& input : inputs) {
+    std::cout << "시뮬레이션 시작\n";
+    for (size_t i = 0; i < inputs.size(); ++i) {
+        auto input = inputs[i];
         garage_counter.input_signals(input.first, input.second);
         garage_counter.update_state();
+        std::cout << "단계 " << i + 1 << ": ";
+        std::cout << "입력 (up: " << (input.first ? "true" : "false") << ", down: " << (input.second ? "true" : "false") << ") -> ";
         std::cout << "현재 상태 (차량 수): " << garage_counter.get_state() << std::endl;
     }
+    std::cout << "시뮬레이션 종료\n";
 
     return 0;
 }
